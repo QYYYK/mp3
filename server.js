@@ -1,39 +1,35 @@
-// Get the packages we need
-var express = require('express'),
-    router = express.Router(),
-    mongoose = require('mongoose'),
-    bodyParser = require('body-parser');
+// server.js
 
-// Read .env file
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const morgan = require('morgan');
 require('dotenv').config();
 
-// Create our Express application
-var app = express();
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Use environment defined port or 3000
-var port = process.env.PORT || 3000;
+// Middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+app.use(morgan('dev'));
 
-// Connect to a MongoDB --> Uncomment this once you have a connection string!!
-//mongoose.connect(process.env.MONGODB_URI,  { useNewUrlParser: true });
+// Connect to MongoDB
+mongoose
+  .connect(process.env.MONGODB_URI, {})
+  .then(() => console.log('MongoDB connected'))
+  .catch((err) => {
+    console.error('MongoDB connection error:', err.message);
+    process.exit(1);
+  });
 
-// Allow CORS so that backend and frontend could be put on different servers
-var allowCrossDomain = function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept");
-    res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS");
-    next();
-};
-app.use(allowCrossDomain);
+// Routes
+const userRoutes = require('./routes/users');
+const taskRoutes = require('./routes/tasks');
 
-// Use the body-parser package in our application
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
-app.use(bodyParser.json());
+app.use('/api/users', userRoutes);
+app.use('/api/tasks', taskRoutes);
 
-// Use routes as a module (see index.js)
-require('./routes')(app, router);
-
-// Start the server
-app.listen(port);
-console.log('Server running on port ' + port);
+// Start server
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
